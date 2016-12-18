@@ -125,10 +125,10 @@ Some examples:
   # Rails config/application.rb, config/environments/development.rb, etc...
 
   # Before
-  config.neo4j.session.type = :server_db
-  config.neo4j.session.url = 'http://localhost:7474'
+  config.neo4j.session_type = :server_db
+  config.neo4j.session_url = 'http://localhost:7474'
 
-  # AFter
+  # After
   config.neo4j.session.type = :http # or :bolt
   config.neo4j.session.url = 'http://localhost:7474'
 
@@ -141,7 +141,7 @@ Previously a connection with be established with ``Neo4j::Session.open`` and the
 
 .. code-block:: ruby
 
-  adaptor = Neo4j::Core::CypherSession::Adaptors::HTTP.new('http://username:password@localhost:7474')
+  adaptor = Neo4j::Core::CypherSession::Adaptors::HTTP.new('http://username:password@localhost:7474', wrap_level: :proc)
 
   session = Neo4j::Core::CypherSession.new(adaptor)
 
@@ -151,11 +151,22 @@ Previously a connection with be established with ``Neo4j::Session.open`` and the
 
   Neo4j::ActiveBase.current_adaptor = adaptor
 
+If you are using multiple threads, you should use the `on_establish_session` method to define how to setup your session.  The `current_session` is stored on a per-thread basis and if you spawn a new thread, this block will be used to establish the session for that thread:
+
+.. code-block:: ruby
+
+  Neo4j::ActiveBase.on_establish_session do
+    adaptor = Neo4j::Core::CypherSession::Adaptors::HTTP.new('http://username:password@localhost:7474', wrap_level: :proc)
+
+    Neo4j::Core::CypherSession.new(adaptor)
+  end
+
 Migrations:
 
 If you would like to use the migrations provided by the ``neo4j`` outside of Rails you can include this in your ``Rakefile``:
 
 .. code-block:: ruby
+
   load 'neo4j/tasks/migration.rake'
 
 
